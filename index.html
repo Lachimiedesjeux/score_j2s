@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Marvel Remix - Scoreboard</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #1c1c1e;
+            --border-color: #e5e5ea;
+            --accent-color: #007aff; /* Bleu iOS épuré */
+            --card-bg: #f2f2f7;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 16px;
+            padding-bottom: 90px;
+            overflow-x: hidden;
+        }
+
+        header {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0;
+            font-weight: 850;
+            color: #000000;
+            letter-spacing: -0.5px;
+        }
+
+        .add-player-btn {
+            background-color: #000000;
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .scoreboard-grid {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 4px;
+            padding-bottom: 12px;
+            align-items: flex-start;
+            scroll-snap-type: x mandatory;
+        }
+
+        .player-column {
+            flex: 1;
+            min-width: 145px;
+            max-width: 200px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+            scroll-snap-align: start;
+            overflow: hidden;
+        }
+
+        .player-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .player-name-input {
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #000;
+            text-align: center;
+            width: 100%;
+            padding: 4px 0;
+            background: transparent;
+        }
+
+        .player-name-input:focus {
+            outline: none;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .player-score-badge {
+            font-size: 1.5rem;
+            font-weight: 850;
+            color: var(--accent-color); /* Application du bleu sur le score */
+            margin-top: 4px;
+        }
+
+        .cards-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .card-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .card-label {
+            font-size: 0.8rem;
+            color: #8e8e93;
+            font-weight: 700;
+            min-width: 22px;
+        }
+
+        .score-input {
+            flex: 1;
+            min-width: 0;
+            height: 40px;
+            background-color: var(--card-bg);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #000;
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .score-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            background-color: #fff;
+        }
+
+        .remove-player-btn {
+            background: none;
+            border: none;
+            color: #000000;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 12px;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            padding: 6px 0;
+        }
+
+        .winner-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-top: 1px solid var(--border-color);
+            padding: 14px 16px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .winner-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #8e8e93;
+        }
+
+        .winner-name {
+            color: #000;
+            font-weight: 800;
+        }
+
+        .reset-btn {
+            background-color: var(--card-bg);
+            color: #000000;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>💥 Marvel Remix Score</h1>
+        <div>
+            <button class="add-player-btn" onclick="addPlayer()">➕ Ajouter un joueur</button>
+        </div>
+    </header>
+
+    <div class="scoreboard-grid" id="scoreboardGrid"></div>
+
+    <div class="winner-banner">
+        <div class="winner-text">
+            🏆 En tête : <span class="winner-name" id="winnerText">-</span>
+        </div>
+        <button class="reset-btn" onclick="resetAll()">🔄 Reset</button>
+    </div>
+
+    <script>
+        const AVATARS = ["🦸‍♂️", "🦸‍♀️", "🦹‍♂️", "🦹‍♀️", "🛡️", "⚡", "🕸️", "🔨", "🧪", "🚀"];
+
+        let players = [
+            { id: 1, name: "Ju", avatar: "🦸‍♀️", scores: ["", "", "", "", "", "", ""] },
+            { id: 2, name: "Seb", avatar: "🦸‍♂️", scores: ["", "", "", "", "", "", ""] }
+        ];
+        let nextId = 3;
+
+        const grid = document.getElementById('scoreboardGrid');
+        const winnerText = document.getElementById('winnerText');
+
+        function render() {
+            grid.innerHTML = '';
+            
+            players.forEach((player, pIndex) => {
+                const total = player.scores.reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+                
+                const col = document.createElement('div');
+                col.className = 'player-column';
+                
+                let html = `
+                    <div class="player-header">
+                        <span style="font-size: 1.6rem; margin-bottom: 2px;">${player.avatar}</span>
+                        <input type="text" class="player-name-input" value="${player.name}" onchange="updateName(${pIndex}, this.value)">
+                        <div class="player-score-badge">${total} pts</div>
+                    </div>
+                `;
+                
+                html += '<div class="cards-list">';
+                for (let i = 0; i < 7; i++) {
+                    html += `
+                        <div class="card-row">
+                            <span class="card-label">C${i+1}</span>
+                            <input type="number" class="score-input" 
+                                   value="${player.scores[i]}" 
+                                   placeholder="0"
+                                   inputmode="numeric" 
+                                   pattern="[0-9]*"
+                                   oninput="updateScore(${pIndex}, ${i}, this.value)">
+                        </div>
+                    `;
+                }
+                html += '</div>';
+                
+                if (players.length > 1) {
+                    html += `<button class="remove-player-btn" onclick="removePlayer(${pIndex})">❌ Retirer</button>`;
+                }
+                
+                col.innerHTML = html;
+                grid.appendChild(col);
+            });
+            
+            updateWinner();
+        }
+
+        function updateScore(pIndex, cIndex, value) {
+            players[pIndex].scores[cIndex] = value;
+            const total = players[pIndex].scores.reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+            grid.children[pIndex].querySelector('.player-score-badge').innerText = `${total} pts`;
+            updateWinner();
+        }
+
+        function updateName(pIndex, value) {
+            players[pIndex].name = value || `Joueur ${pIndex + 1}`;
+            updateWinner();
+        }
+
+        function addPlayer() {
+            const randomAvatar = AVATARS[Math.floor(Math.random() * AVATARS.length)];
+            players.push({
+                id: nextId++,
+                name: `Joueur ${players.length + 1}`,
+                avatar: randomAvatar,
+                scores: ["", "", "", "", "", "", ""]
+            });
+            render();
+            grid.scrollLeft = grid.scrollWidth;
+        }
+
+        function removePlayer(pIndex) {
+            players.splice(pIndex, 1);
+            render();
+        }
+
+        function updateWinner() {
+            if (players.length === 0) {
+                winnerText.innerText = "-";
+                return;
+            }
+            let maxScore = -999;
+            let winnerName = "-";
+            players.forEach(p => {
+                const total = p.scores.reduce((sum, val) => sum + (parseInt(val) || 0), 0);
+                if (total > maxScore) {
+                    maxScore = total;
+                    winnerName = `${p.avatar} ${p.name} (${total} pts)`;
+                }
+            });
+            winnerText.innerText = winnerName;
+        }
+
+        function resetAll() {
+            if(confirm("Effacer tous les scores ?")) {
+                players.forEach(p => {
+                    p.scores = ["", "", "", "", "", "", ""];
+                });
+                render();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
